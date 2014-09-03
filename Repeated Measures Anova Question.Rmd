@@ -1,0 +1,198 @@
+---
+title: "Repeated Measures aov"
+output: html_document
+---
+
+
+```{r, echo=FALSE,message=FALSE}
+#Require packages:
+library(plyr)
+library(reshape2)
+library(ggplot2)
+library(ggthemes)
+
+
+#Load and attach data ####
+#Load source file with all femur data
+setwd("//Users/Carrie/Desktop/")
+femurdataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_Femur.txt", header=T, sep="\t")
+
+#Now we want only the "Human" data
+#use grep function to pull out labels with Human in beginning of character string
+Human.rows <- grep("^SBUhuman_", as.matrix(femurdataframe$label))
+
+#Additional code for humans to include Point Hope (currently not working for femur)
+#PH.rows <- grep("^PointHope_", as.matrix(femurdataframe$label))
+#combined <- c(Human.rows, PH.rows)
+
+#now pull out only those row levels which included Human
+Human.femurdataframe <- femurdataframe[Human.rows,]
+
+
+#Create rows for J and Imin/Imax
+Human.femurdataframe$J <- Human.femurdataframe$Imin + Human.femurdataframe$Imax
+Human.femurdataframe$ratio <- Human.femurdataframe$Imax / Human.femurdataframe$Imin
+
+
+#dataframe must be attached for this function to work
+data <- Human.femurdataframe
+attach(data)
+
+
+```
+
+
+
+```{r, echo=FALSE,message=FALSE}
+
+##########################################################################################
+##########################################################################################
+#CSA Analysis ####
+# Function to pull out csa at intervals and compile into dataframe 
+midshaft.csa.function <- function(x)
+{
+  slicelength <- as.numeric(length(csa[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slice.bind <- cbind(seq(1, slicelength), (csa[which(label == x)]))
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  csa.levels <- data.frame(rbind(slice.matrix[,2]))
+  csa.levels <- cbind(x, csa.levels)
+  colnames(csa.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((csa.levels[,2:21] - csa.levels[,12])/csa.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.csa = mdply(unique(x), midshaft.csa.function)
+
+
+#Reshape into long format in order to plot 
+result.csa.long <- melt(result.csa, variable.name="level", value.name="percent.difference")
+
+result.csa.long <- rbind(result.csa.long[which(result.csa.long$level == 30),], 
+                         result.csa.long[which(result.csa.long$level == 35),],
+                         result.csa.long[which(result.csa.long$level == 40),],
+                         result.csa.long[which(result.csa.long$level == 45),],
+                         result.csa.long[which(result.csa.long$level == 50),],
+                         result.csa.long[which(result.csa.long$level == 55),],
+                         result.csa.long[which(result.csa.long$level == 60),],
+                         result.csa.long[which(result.csa.long$level == 65),],
+                         result.csa.long[which(result.csa.long$level == 70),])
+
+
+```
+
+This is what the data look like in terms of percent differences from midshaft:
+---
+
+```{r, echo=FALSE}
+ggplot(result.csa.long, aes(result.csa.long$level, result.csa.long$percent.difference, group=1)) +
+  geom_point() 
+
+```
+
+####  And we want to know, at what point do these differences become significantly different?
+
+Previous papers have used paired t-tests to assess this.  These are the Bonferroni Corrected p-values from paired t-tests. 
+```{r, echo=FALSE}
+
+
+csa.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.csa.result$'50', raw.csa.result$'30', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'35', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'40', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'45', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'55', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'60', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'65', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'70', paired=T)$p.value)))
+colnames(csa.ttest) <- c("level", "p-value")
+
+csa.ttest[,2] <- p.adjust(csa.ttest[,2], method = "bonferroni", n = length(csa.ttest[,2]))
+```
+
+
+```{r}
+csa.ttest
+```
+#####  It seems that this method might be a little too aggressive in finding significant differences when none may actually exist
+
+
+
+*Background Code*
+--
+```{r, message=FALSE}
+midshaft.raw.csa.function <- function(x)
+{
+  slicelength <- as.numeric(length(csa[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slice.bind <- cbind(seq(1, slicelength), (csa[which(label == x)]))
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  csa.levels <- data.frame(rbind(slice.matrix[,2]))
+  csa.levels <- cbind(x, csa.levels)
+  colnames(csa.levels) <- c("specimen", seq(0,95, by=5))
+  return(csa.levels)
+}
+
+
+raw.csa.result = mdply(unique(x), midshaft.raw.csa.function)
+raw.result.csa.long <- melt(raw.csa.result, variable.name="level", value.name="raw.value")
+
+raw.result.csa.long <- rbind(raw.result.csa.long[which(raw.result.csa.long$level == 30),], 
+                             raw.result.csa.long[which(raw.result.csa.long$level == 35),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 40),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 45),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 50),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 55),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 60),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 65),],
+                             raw.result.csa.long[which(raw.result.csa.long$level == 70),])
+
+
+```
+
+Standard Repeated Measures Anova 
+---
+trying to account for repeated measures (levels) from the same specimens
+```{r}
+m <- aov(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + Error(raw.result.csa.long$specimen/raw.result.csa.long$level))
+summary(m)
+```
+
+
+Setting up the error structure this way yields the same results: 
+```{r}
+m <- aov(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + Error(raw.result.csa.long$specimen))
+summary(m)
+```
+
+
+The previous methods (assuming error structure was correct) don't work with TukeyHSD test.  Either need different test or different type of object output.  The following code was suggested to fix that
+```{r}
+m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$specimen)))
+summary(m)
+head(TukeyHSD(m))
+```
+
+but gives way too many comparisons...
+
+using level as error term seems to give the correct tukey comparisons, but is probably not the right repeated measures term...
+```{r}
+m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$level)))
+head(TukeyHSD(m))
+```
+
+
+
+
+
+
+#####  Is a repeated measures ANOVA the best approach?
+
+-  If so, is the error structure correct?
+-  and is the post hoc test the most appropriate choice?
+
