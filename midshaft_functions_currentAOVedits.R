@@ -119,25 +119,31 @@ raw.result.csa.long <- rbind(raw.result.csa.long[which(raw.result.csa.long$level
                              raw.result.csa.long[which(raw.result.csa.long$level == 70),])
 
 
-#Standard repeated measures anova (make sure Error structure is correct)
-m <- aov(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + Error(raw.result.csa.long$specimen/raw.result.csa.long$level))
-#or setting up error as the following yields the same values as above: 
-m <- aov(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + Error(raw.result.csa.long$specimen))
+raw.result.csa.long[-(which(raw.result.csa.long$level == 0)),]
+
+raw.result.csa.long <- raw.result.csa.long[-c((which(raw.result.csa.long$level == 0)), 
+                       (which(raw.result.csa.long$level == 5)),
+                       (which(raw.result.csa.long$level == 10)),
+                       (which(raw.result.csa.long$level == 15)),
+                       (which(raw.result.csa.long$level == 20)),
+                       (which(raw.result.csa.long$level == 25)),
+                       (which(raw.result.csa.long$level == 75)),
+                       (which(raw.result.csa.long$level == 80)),
+                       (which(raw.result.csa.long$level == 85)),
+                       (which(raw.result.csa.long$level == 90)),
+                       (which(raw.result.csa.long$level == 95))),]
 
 
 
-#Suggested adjustment to make work with Tukey (doesn't output as list this way)
-#using level as error term seems to give the correct tukey comparisons, but might not be the right repeated measures term...
-m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$level)))
+#Standard repeated measures anova (correcting for repeated measures from the same specimen)
+m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$specimen)))
+
 TukeyHSD(m)
-
-
-#m.raw <- aov(raw.csa.result.diaphysis$raw.value ~ raw.csa.result.diaphysis$level)
-#csa.m.rawtuk <- TukeyHSD(m.raw)
-#write.table(csa.m.tuk[1], file="Human_femur_aov_csa_raw.txt", sep="\t")
+m$`raw.result.csa.long$level`
+m <- TukeyHSD(m)
+write.table(m$`raw.result.csa.long$level`, file="Human_femur_aov_csa_raw.txt", sep="\t")
 
 #T-test of all levels against midshaft
-
 csa.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.csa.result$'50', raw.csa.result$'30', paired=T)$p.value,
                                                                 t.test(raw.csa.result$'50', raw.csa.result$'35', paired=T)$p.value,
                                                                 t.test(raw.csa.result$'50', raw.csa.result$'40', paired=T)$p.value,
