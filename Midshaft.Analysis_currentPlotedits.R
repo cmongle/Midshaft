@@ -40,4 +40,5 @@ ggplot(result.csa.long, aes(result.csa.long$level, abs(result.csa.long$percent.d
 
 #try to apply this function to calculate Standard error at each level since I am no longer using the anova around the percent difference
 library(plotrix)
-std.error(raw.csa.result$'30')
+#needs to be mean percent difference + this value and then -this value
+std.error(result.csa$'30')
