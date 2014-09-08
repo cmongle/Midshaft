@@ -25,17 +25,20 @@ pan.humerusdataframe$ratio <- pan.humerusdataframe$Imax / pan.humerusdataframe$I
 data <- (pan.humerusdataframe)
 attach(data)
 
-
-##########################################################################################
 ##########################################################################################
 #CSA Analysis ####
 # Function to pull out csa at intervals and compile into dataframe 
+
+#CURRENTLY WORKING AND SAME AS SLADEK
+#all functions need to be changed to reflect this!####
 midshaft.csa.function <- function(x)
 {
   slicelength <- as.numeric(length(csa[which(label == x)]))
   slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
   slice.intervals <- slice.intervals + min(slice[which(label == x)])
-  slice.bind <- cbind(seq(1, slicelength), (csa[which(label == x)]))
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (csa[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
   slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
   csa.levels <- data.frame(rbind(slice.matrix[,2]))
   csa.levels <- cbind(x, csa.levels)
