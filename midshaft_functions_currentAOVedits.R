@@ -67,13 +67,14 @@ result.csa.long <- rbind(result.csa.long[which(result.csa.long$level == 30),],
                          result.csa.long[which(result.csa.long$level == 65),],
                          result.csa.long[which(result.csa.long$level == 70),])
 
-#*****Need to work on this code to make a Repeated measures ANOVA####
+#Repeated measures ANOVA####
 
 m <- aov(result.csa.long$percent.difference ~ result.csa.long$level + Error(result.csa.long$specimen))
 csa.m.tuk <- TukeyHSD(m)
 
 #write.table(csa.m.tuk[1], file="Human_femur_aov_csa.txt", sep="\t")
 
+#Previous ANOVA code
 #Pull out the mean percent differences from the TukeyHSD at each level of interest
 #midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
 #csa.midshaft.aov <- as.data.frame(csa.m.tuk$'csa.result.diaphysis$level'[midshaft.aov,])
@@ -92,7 +93,9 @@ midshaft.raw.csa.function <- function(x)
   slicelength <- as.numeric(length(csa[which(label == x)]))
   slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
   slice.intervals <- slice.intervals + min(slice[which(label == x)])
-  slice.bind <- cbind(seq(1, slicelength), (csa[which(label == x)]))
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (csa[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
   slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
   csa.levels <- data.frame(rbind(slice.matrix[,2]))
   csa.levels <- cbind(x, csa.levels)
@@ -104,40 +107,19 @@ midshaft.raw.csa.function <- function(x)
 raw.csa.result = mdply(unique(x), midshaft.raw.csa.function)
 raw.result.csa.long <- melt(raw.csa.result, variable.name="level", value.name="raw.value")
 
-raw.result.csa.long <- rbind(raw.result.csa.long[which(raw.result.csa.long$level == 30),], 
-                             raw.result.csa.long[which(raw.result.csa.long$level == 35),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 40),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 45),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 50),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 55),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 60),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 65),],
-                             raw.result.csa.long[which(raw.result.csa.long$level == 70),])
 
-
-raw.result.csa.long[-(which(raw.result.csa.long$level == 0)),]
-
-raw.result.csa.long <- raw.result.csa.long[-c((which(raw.result.csa.long$level == 0)), 
-                       (which(raw.result.csa.long$level == 5)),
-                       (which(raw.result.csa.long$level == 10)),
-                       (which(raw.result.csa.long$level == 15)),
-                       (which(raw.result.csa.long$level == 20)),
-                       (which(raw.result.csa.long$level == 25)),
-                       (which(raw.result.csa.long$level == 75)),
-                       (which(raw.result.csa.long$level == 80)),
-                       (which(raw.result.csa.long$level == 85)),
-                       (which(raw.result.csa.long$level == 90)),
-                       (which(raw.result.csa.long$level == 95))),]
+#inverse of previous result.csa.long to keep specimen names for the anova-- probably need to change for all 
+raw.result.csa.long[-c((which(raw.result.csa.long$level == 0)), (which(raw.result.csa.long$level == 5)),(which(raw.result.csa.long$level == 10)), (which(raw.result.csa.long$level == 15)),(which(raw.result.csa.long$level == 20)), (which(raw.result.csa.long$level == 25)),(which(raw.result.csa.long$level == 75)),(which(raw.result.csa.long$level == 80)),(which(raw.result.csa.long$level == 85)),(which(raw.result.csa.long$level == 90)),(which(raw.result.csa.long$level == 95))),]
 
 
 
 #Standard repeated measures anova (correcting for repeated measures from the same specimen)
 m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$specimen)))
 
-TukeyHSD(m)
-m$`raw.result.csa.long$level`
 m <- TukeyHSD(m)
-write.table(m$`raw.result.csa.long$level`, file="Human_femur_aov_csa_raw.txt", sep="\t")
+m$`raw.result.csa.long$level`
+
+write.table(m$`raw.result.csa.long$level`, file="aov_csa_raw.txt", sep="\t")
 
 #T-test of all levels against midshaft
 csa.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.csa.result$'50', raw.csa.result$'30', paired=T)$p.value,
@@ -151,7 +133,7 @@ csa.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.csa.r
 colnames(csa.ttest) <- c("level", "p-value")
 #Bonferroni Correction to these p-values
 csa.ttest[,2] <- p.adjust(csa.ttest[,2], method = "bonferroni", n = length(csa.ttest[,2]))
-write.table(csa.ttest, file="Human_Femur_csa_ttest.txt", sep="\t")
+write.table(csa.ttest, file="csa_ttest.txt", sep="\t")
 
 
 
