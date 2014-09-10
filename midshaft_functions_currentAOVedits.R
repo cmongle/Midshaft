@@ -98,7 +98,6 @@ raw.result.csa.long <- raw.result.csa.long[-c((which(raw.result.csa.long$level =
 #Standard repeated measures anova (correcting for repeated measures from the same specimen)
 m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$specimen)))
 m <- TukeyHSD(m)
-m$`raw.result.csa.long$level`
 midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
 csa.aov <- m$`raw.result.csa.long$level`[midshaft.aov,]
 
@@ -120,5 +119,32 @@ csa.ttest[,2] <- p.adjust(csa.ttest[,2], method = "bonferroni", n = length(csa.t
 #Compare Results of ANOVA and T-test:
 csa.pvalues <- cbind(csa.aov[,-c(1:3)], csa.ttest[,2])
 colnames(csa.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+csa.pvalues
+
+
+#And the same significance tests on the logged values####
+m <- aov(terms(log(raw.result.csa.long$raw.value) ~ raw.result.csa.long$level + (raw.result.csa.long$specimen)))
+m <- TukeyHSD(m)
+midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
+log.csa.aov <- m$`raw.result.csa.long$level`[midshaft.aov,]
+
+#Paired T-test of all levels against midshaft
+log.csa.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(log(log(raw.csa.result$'50')), log(raw.csa.result$'30'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'35'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'40'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'45'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'55'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'60'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'65'), paired=T)$p.value,
+                                                                t.test(log(raw.csa.result$'50'), log(raw.csa.result$'70'), paired=T)$p.value)))
+colnames(log.csa.ttest) <- c("level", "p-value")
+#Bonferroni Correction to these p-values
+log.csa.ttest[,2] <- p.adjust(csa.ttest[,2], method = "bonferroni", n = length(csa.ttest[,2]))
+
+
+#Compare Results of logged ANOVA and T-test:
+log.csa.pvalues <- cbind(log.csa.aov[,-c(1:3)], log.csa.ttest[,2])
+colnames(log.csa.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+log.csa.pvalues
 
 
