@@ -15,11 +15,11 @@ tibiadataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_tibia.txt", head
 Human.rows <- grep("^Human_", as.matrix(tibiadataframe$label))
 
 #Additional code for humans to include Point Hope (currently not working for tibia)
-#PH.rows <- grep("^PointHope_", as.matrix(tibiadataframe$label))
-#combined <- c(Human.rows, PH.rows)
+PH.rows <- grep("^PointHope_", as.matrix(tibiadataframe$label))
+combined <- c(Human.rows, PH.rows)
 
 #now pull out only those row levels which included Human
-Human.tibiadataframe <- tibiadataframe[PH.rows,]
+Human.tibiadataframe <- tibiadataframe[combined,]
 
 
 #Create rows for J and Imin/Imax
