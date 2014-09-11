@@ -11,7 +11,7 @@ setwd("//Users/Carrie/Desktop/")
 radiusdataframe <- read.table("Ape.Midshaft_Slice.Geometry.Output_radius.txt", header=T, sep="\t")
 
 #Now we want only the gorilla gorilla gorilla data
-#Pull out the specific specimens (by number-- in measurement list) which are gorilla gorilla gorilla
+#Pull out the specific specimens (by number-- in  measurement list) which are gorilla gorilla gorilla
 
 gorilla.1 <- radiusdataframe[radiusdataframe[,2] == "Gorilla_AMNH_167337_Radius",]
 gorilla.2 <- radiusdataframe[radiusdataframe[,2] == "Gorilla_AMNH_167339_Radius",]
