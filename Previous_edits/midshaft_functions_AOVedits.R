@@ -11,6 +11,7 @@ setwd("//Users/Carrie/Desktop/")
 humerusdataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_humerus.txt", header=T, sep="\t")
 
 
+
 #Now we want only the chimpanzee data
 #use grep function to pull out labels with Pan in beginning of character string
 pan.rows <- grep("^Pan_", as.matrix(humerusdataframe$label))
