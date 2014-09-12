@@ -1,0 +1,225 @@
+---
+title: "Human Tibia Plot"
+output: html_document
+---
+```{r, echo=FALSE, message=FALSE}
+#Require packages:
+library(plyr)
+library(reshape2)
+library(ggplot2)
+library(ggthemes)
+
+
+#Load and attach data ####
+#Load source file with all tibia data
+setwd("//Users/Carrie/Desktop/")
+tibiadataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_tibia.txt", header=T, sep="\t")
+
+#Now we want only the "Human" data
+#use grep function to pull out labels with Human in beginning of character string
+Human.rows <- grep("^Human_", as.matrix(tibiadataframe$label))
+
+#Additional code for humans to include Point Hope (currently not working for tibia)
+PH.rows <- grep("^PointHope_", as.matrix(tibiadataframe$label))
+combined <- c(Human.rows, PH.rows)
+
+#now pull out only those row levels which included Human
+Human.tibiadataframe <- tibiadataframe[combined,]
+
+
+#Create rows for J and Imin/Imax
+Human.tibiadataframe$J <- Human.tibiadataframe$Imin + Human.tibiadataframe$Imax
+Human.tibiadataframe$ratio <- Human.tibiadataframe$Imax / Human.tibiadataframe$Imin
+
+
+#dataframe must be attached for this function to work
+data <- Human.tibiadataframe
+attach(data)
+
+```
+
+
+######  Code to pull out CSA at 5% intervals and calculate percent differences. This is repeated for J and Imax/Imin.
+```{r, message=FALSE}
+midshaft.csa.function <- function(x)
+{
+  slicelength <- as.numeric(length(csa[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (csa[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  csa.levels <- data.frame(rbind(slice.matrix[,2]))
+  csa.levels <- cbind(x, csa.levels)
+  colnames(csa.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((csa.levels[,2:21] - csa.levels[,12])/csa.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.csa = mdply(unique(x), midshaft.csa.function)
+```
+
+```{r, echo=FALSE, message=FALSE}
+#J Analysis ####
+# Function to pull out J at intervals and compile into dataframe 
+
+
+midshaft.J.function <- function(x)
+{
+  slicelength <- as.numeric(length(J[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (J[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  J.levels <- data.frame(rbind(slice.matrix[,2]))
+  J.levels <- cbind(x, J.levels)
+  colnames(J.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((J.levels[,2:21] - J.levels[,12])/J.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.J = mdply(unique(x), midshaft.J.function)
+
+
+
+midshaft.ratio.function <- function(x)
+{
+  slicelength <- as.numeric(length(ratio[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (ratio[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  ratio.levels <- data.frame(rbind(slice.matrix[,2]))
+  ratio.levels <- cbind(x, ratio.levels)
+  colnames(ratio.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((ratio.levels[,2:21] - ratio.levels[,12])/ratio.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.ratio = mdply(unique(x), midshaft.ratio.function)
+
+
+```
+
+######  Calculate the mean percent difference at each level.  Repeated  for Imax/Imin and J.
+```{r, message=FALSE}
+library(plotrix)
+csa.std.e <- c(std.error(result.csa$'30'), 
+           std.error(result.csa$'35'),
+           std.error(result.csa$'40'), 
+           std.error(result.csa$'45'), 
+           std.error(result.csa$'50'),
+           std.error(result.csa$'55'),
+           std.error(result.csa$'60'),
+           std.error(result.csa$'65'),
+           std.error(result.csa$'70'))
+
+csa.mean.perdiff <- c(mean(result.csa$'30'), 
+                  mean(result.csa$'35'),
+                  mean(result.csa$'40'), 
+                  mean(result.csa$'45'), 
+                  mean(result.csa$'50'),
+                  mean(result.csa$'55'),
+                  mean(result.csa$'60'),
+                  mean(result.csa$'65'),
+                  mean(result.csa$'70'))
+csa.mean.perdiff <- abs(csa.mean.perdiff)                  
+level <- c(30, 35, 40, 45, 50, 55, 60, 65, 70)
+csa.percent.difference <- as.data.frame(cbind(level, csa.mean.perdiff, csa.std.e))
+```
+
+```{r, echo=FALSE, message=FALSE}
+
+J.std.e <- c(std.error(result.J$'30'), 
+             std.error(result.J$'35'),
+             std.error(result.J$'40'), 
+             std.error(result.J$'45'), 
+             std.error(result.J$'50'),
+             std.error(result.J$'55'),
+             std.error(result.J$'60'),
+             std.error(result.J$'65'),
+             std.error(result.J$'70'))
+
+J.mean.perdiff <- c(mean(result.J$'30'), 
+                    mean(result.J$'35'),
+                    mean(result.J$'40'), 
+                    mean(result.J$'45'), 
+                    mean(result.J$'50'),
+                    mean(result.J$'55'),
+                    mean(result.J$'60'),
+                    mean(result.J$'65'),
+                    mean(result.J$'70'))
+J.mean.perdiff <- abs(J.mean.perdiff)                  
+level <- c(30, 35, 40, 45, 50, 55, 60, 65, 70)
+J.percent.difference <- as.data.frame(cbind(level, J.mean.perdiff, J.std.e))
+
+
+ratio.std.e <- c(std.error(result.ratio$'30'), 
+                 std.error(result.ratio$'35'),
+                 std.error(result.ratio$'40'), 
+                 std.error(result.ratio$'45'), 
+                 std.error(result.ratio$'50'),
+                 std.error(result.ratio$'55'),
+                 std.error(result.ratio$'60'),
+                 std.error(result.ratio$'65'),
+                 std.error(result.ratio$'70'))
+
+ratio.mean.perdiff <- c(mean(result.ratio$'30'), 
+                        mean(result.ratio$'35'),
+                        mean(result.ratio$'40'), 
+                        mean(result.ratio$'45'), 
+                        mean(result.ratio$'50'),
+                        mean(result.ratio$'55'),
+                        mean(result.ratio$'60'),
+                        mean(result.ratio$'65'),
+                        mean(result.ratio$'70'))
+ratio.mean.perdiff <- abs(ratio.mean.perdiff)                  
+level <- c(30, 35, 40, 45, 50, 55, 60, 65, 70)
+ratio.percent.difference <- as.data.frame(cbind(level, ratio.mean.perdiff, ratio.std.e))
+
+
+```
+
+######  Code for plot
+```{r, message=FALSE, results='hide'}
+result.plot <- ggplot(csa.percent.difference, aes(level, csa.mean.perdiff, group=1)) +
+  scale_colour_manual("", breaks=c("CSA","J","Imax/Imin"), values = c("blue", "orange", "dark red"))+
+  scale_fill_manual("", breaks=c("CSA","J","Imax/Imin"), values = c("light blue", "yellow", "red"))+
+  geom_line(data=csa.percent.difference, stat='smooth', aes(level, csa.mean.perdiff, colour="CSA", fill="CSA")) + 
+  geom_ribbon(data=csa.percent.difference, aes(ymax=csa.percent.difference$csa.mean.perdiff + csa.percent.difference$csa.std.e, ymin=csa.percent.difference$csa.mean.perdiff - csa.percent.difference$csa.std.e, fill="CSA"), alpha=.2)+
+
+  geom_line(data=J.percent.difference, aes(level, J.mean.perdiff, colour="J", fill="J")) + 
+  geom_ribbon(data=J.percent.difference, aes(ymax=J.percent.difference$J.mean.perdiff + J.percent.difference$J.std.e, ymin=J.percent.difference$J.mean.perdiff - J.percent.difference$J.std.e, fill="J"), alpha=.2)+
+
+
+  geom_line(data=ratio.percent.difference, stat='smooth', aes(level,ratio.mean.perdiff, colour="Imax/Imin", fill="Imax/Imin")) + 
+  geom_ribbon(data=ratio.percent.difference, aes(ymax=ratio.percent.difference$ratio.mean.perdiff + ratio.percent.difference$ratio.std.e, ymin=ratio.percent.difference$ratio.mean.perdiff - ratio.percent.difference$ratio.std.e, fill="Imax/Imin"), alpha=.2)
+
+#Add Theme
+result.plot <- result.plot + xlab('5% Intervals Along Diaphysis')+ ylab('Percent Difference from Midshaft')+theme_calc()+ 
+  theme(axis.title.x = element_text(vjust = -.4), axis.title.y = element_text(vjust = .7, angle = 90))
+
+```
+
+###  Mean Percent Difference along Diaphysis +/- Standard Error
+
+```{r, echo=FALSE, message=FALSE}
+result.plot
+```
