@@ -1,11 +1,15 @@
 ####################################################################################################################################################################################
 
-
+lo
 
 ##########################
 #More simple plot that Ian preferred to look at the data ####
+
+result.csa.long$percent.difference <- abs(result.csa.long$percent.difference)
 ggplot(result.csa.long, aes(result.csa.long$level, result.csa.long$percent.difference, group=1)) +
-  geom_point() 
+stat_smooth() + geom_point()
+
+
 ggplot(result.J.long, aes(result.J.long$level, result.J.long$percent.difference, group=1)) +
   geom_point() 
 
@@ -97,23 +101,46 @@ ratio.percent.difference <- as.data.frame(cbind(level, ratio.mean.perdiff, ratio
 
 
 #Plotting the Absolute Mean Percent Differences +/- the standard error
+pdf("Human Tibia.pdf", height=21, width=35)
 
 result.plot <- ggplot(csa.percent.difference, aes(level, csa.mean.perdiff, group=1)) +
   scale_colour_manual("", breaks=c("CSA","J","Imax/Imin"), values = c("blue", "orange", "dark red"))+
   scale_fill_manual("", breaks=c("CSA","J","Imax/Imin"), values = c("light blue", "yellow", "red"))+
-  geom_line(data=csa.percent.difference, stat='smooth', aes(level, csa.mean.perdiff, colour="CSA", fill="CSA")) + 
+  geom_line(data=csa.percent.difference, aes(level, csa.mean.perdiff, colour="CSA", fill="CSA")) + 
   geom_ribbon(data=csa.percent.difference, aes(ymax=csa.percent.difference$csa.mean.perdiff + csa.percent.difference$csa.std.e, ymin=csa.percent.difference$csa.mean.perdiff - csa.percent.difference$csa.std.e, fill="CSA"), alpha=.2)+
 
   geom_line(data=J.percent.difference, aes(level, J.mean.perdiff, colour="J", fill="J")) + 
   geom_ribbon(data=J.percent.difference, aes(ymax=J.percent.difference$J.mean.perdiff + J.percent.difference$J.std.e, ymin=J.percent.difference$J.mean.perdiff - J.percent.difference$J.std.e, fill="J"), alpha=.2)+
 
 
-  geom_line(data=ratio.percent.difference, stat='smooth', aes(level,ratio.mean.perdiff, colour="Imax/Imin", fill="Imax/Imin")) + 
+  geom_line(data=ratio.percent.difference, aes(level,ratio.mean.perdiff, colour="Imax/Imin", fill="Imax/Imin")) + 
   geom_ribbon(data=ratio.percent.difference, aes(ymax=ratio.percent.difference$ratio.mean.perdiff + ratio.percent.difference$ratio.std.e, ymin=ratio.percent.difference$ratio.mean.perdiff - ratio.percent.difference$ratio.std.e, fill="Imax/Imin"), alpha=.2)
 
 #Add Theme
 result.plot + xlab('5% Intervals Along Diaphysis')+ ylab('Percent Difference from Midshaft') + theme_calc(base_size=28) + 
-  theme(axis.title.x = element_text(vjust = -.4), axis.title.y = element_text(vjust = .7, angle = 90)) +ylim(0,20)
+  theme(axis.title.x = element_text(vjust = -.4), axis.title.y = element_text(vjust = .7, angle = 90)) 
+
+dev.off()
 
 
 
+pdf("Human Tibia.pdf", height=21, width=35)
+
+result.plot <- ggplot(csa.percent.difference, aes(level, csa.mean.perdiff, group=1)) +
+  scale_colour_manual("", breaks=c("CSA","J","Imax/Imin"), values = c("blue", "orange", "dark red"))+
+  scale_fill_manual("", breaks=c("CSA","J","Imax/Imin"), values = c("light blue", "yellow", "red"))+
+  geom_line(data=csa.percent.difference, aes(level, csa.mean.perdiff, colour="CSA", fill="CSA")) + 
+  geom_ribbon(data=csa.percent.difference, stat='smooth',aes(ymax=csa.percent.difference$csa.mean.perdiff + csa.percent.difference$csa.std.e, ymin=csa.percent.difference$csa.mean.perdiff - csa.percent.difference$csa.std.e, fill="CSA"), alpha=.2)+
+  
+  geom_line(data=J.percent.difference,aes(level, J.mean.perdiff, colour="J", fill="J")) + 
+  geom_ribbon(data=J.percent.difference, aes(ymax=J.percent.difference$J.mean.perdiff + J.percent.difference$J.std.e, ymin=J.percent.difference$J.mean.perdiff - J.percent.difference$J.std.e, fill="J", stat='smooth'), alpha=.2)+
+  
+  
+  geom_line(data=ratio.percent.difference, aes(level,ratio.mean.perdiff, colour="Imax/Imin", fill="Imax/Imin")) + 
+  geom_ribbon(data=ratio.percent.difference,aes(ymax=ratio.percent.difference$ratio.mean.perdiff + ratio.percent.difference$ratio.std.e, ymin=ratio.percent.difference$ratio.mean.perdiff - ratio.percent.difference$ratio.std.e, stat='smooth',fill="Imax/Imin"), alpha=.2)
+
+#Add Theme
+result.plot + xlab('5% Intervals Along Diaphysis')+ ylab('Percent Difference from Midshaft') + theme_calc(base_size=28) + 
+  theme(axis.title.x = element_text(vjust = -.4), axis.title.y = element_text(vjust = .7, angle = 90)) 
+
+dev.off()
