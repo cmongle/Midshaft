@@ -7,7 +7,7 @@ library(ggthemes)
 
 setwd("//Users/Carrie/Desktop/")
 humerusdataframe <- read.table('Ape.Midshaft_Slice.Geometry.Ouput_humerus.txt', header=T, sep="\t")
-str(humerusdataframe)
+
 
 #Now we want only the "human" data
 #use grep function to pull out labels with Pan in beginning of character string

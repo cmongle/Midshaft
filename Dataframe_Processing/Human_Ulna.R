@@ -6,8 +6,7 @@ library(ggthemes)
 
 
 setwd("//Users/Carrie/Desktop/")
-ulnadataframe <- read.table('Ape.Midshaft_Slice.Geometry.Ouput_ulna.txt', header=T, sep="\t")
-str(ulnadataframe)
+ulnadataframe <- read.table('Ape.Midshaft_Slice.Geometry.Output_ulna.txt', header=T, sep="\t")
 
 #Now we want only the "human" data
 #use grep function to pull out labels with Pan in beginning of character string
@@ -27,7 +26,7 @@ human.ulnadataframe$ratio <- human.ulnadataframe$Imax / human.ulnadataframe$Imin
 
 
 #dataframe must be attached for this function to work
-data <- Human.ulnadataframe
+data <- human.ulnadataframe
 attach(data)
 
 
