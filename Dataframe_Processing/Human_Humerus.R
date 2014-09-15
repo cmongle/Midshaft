@@ -27,7 +27,7 @@ human.humerusdataframe$ratio <- human.humerusdataframe$Imax / human.humerusdataf
 
 
 #dataframe must be attached for this function to work
-data <- Human.humerusdataframe
+data <- human.humerusdataframe
 attach(data)
 
 
