@@ -8,7 +8,7 @@ library(ggthemes)
 #Load and attach data ####
 #Load source file with all ulna data
 setwd("//Users/Carrie/Desktop/")
-ulnadataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_ulna.txt", header=T, sep="\t")
+ulnadataframe <- read.table("Ape.Midshaft_Slice.Geometry.Output_ulna.txt", header=T, sep="\t")
 
 
 #Now we want only the chimpanzee data

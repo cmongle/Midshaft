@@ -8,7 +8,7 @@ library(ggthemes)
 #Load and attach data ####
 #Load source file with all radius data
 setwd("//Users/Carrie/Desktop/")
-radiusdataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_radius.txt", header=T, sep="\t")
+radiusdataframe <- read.table("Ape.Midshaft_Slice.Geometry.Output_radius.txt", header=T, sep="\t")
 
 
 #Now we want only the chimpanzee data

@@ -8,9 +8,8 @@ library(ggthemes)
 #Load and attach data ####
 #Load source file with all ulna data
 setwd("//Users/Carrie/Desktop/")
-ulnadataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_ulna.txt", header=T, sep="\t")
+ulnadataframe <- read.table("Ape.Midshaft_Slice.Geometry.Output_ulna.txt", header=T, sep="\t")
 
-ulnadataframe <- read.csv("//Users//Carrie/Documents/Stony Brook//Research Projects/2013-14_Great.Ape_Long.Bones/Great.Ape_CSV_Project.Data_Files/Ape.Midshaft_Slice.Geometry.Output_Ulna.csv")
 #Now we want only the gorilla gorilla gorilla data
 #Pull out the specific specimens (by number-- in measurement list) which are gorilla gorilla gorilla
 
@@ -36,8 +35,13 @@ gorilla.19 <- ulnadataframe[ulnadataframe[,2] == "Gorilla_MCZ_57482_Ulna",]
 gorilla.20 <- ulnadataframe[ulnadataframe[,2] == "Gorilla_MCZ_29049_Ulna",]
 
 gorilla.ulnadataframe <- rbind(gorilla.1, gorilla.2, gorilla.3, gorilla.4, gorilla.5, gorilla.6, gorilla.7, gorilla.8, gorilla.9, gorilla.10, gorilla.11, gorilla.12, gorilla.13, gorilla.14, gorilla.15, gorilla.16, gorilla.17, gorilla.18, gorilla.19, gorilla.20)
-#include only columns of interest in order to make analysis run faster
-gorilla.ulnadataframe <- gorilla.ulnadataframe[,c(2,4,5,14,15)]
+
+
+
+gorilla.ulnadataframe$J <- gorilla.ulnadataframe$Imin + gorilla.ulnadataframe$Imax
+gorilla.ulnadataframe$ratio <- gorilla.ulnadataframe$Imax / gorilla.ulnadataframe$Imin
+
+
 
 #dataframe must be attached for this function to work
 data <- (gorilla.ulnadataframe)
