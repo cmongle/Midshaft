@@ -1,0 +1,415 @@
+---
+title: "Gorilla gorilla Humerus"
+output: html_document
+---
+
+```{r, echo=FALSE,message=FALSE}
+#Require packages:
+library(plyr)
+library(reshape2)
+library(ggplot2)
+library(ggthemes)
+
+
+#Load and attach data ####
+#Load source file with all humerus data
+setwd("//Users/Carrie/Desktop/")
+humerusdataframe <- read.table("Ape.Midshaft_Slice.Geometry.Ouput_humerus.txt", header=T, sep="\t")
+
+#Now we want only the gorilla gorilla gorilla data
+#Pull out the specific specimens (by number-- in measurement list) which are gorilla gorilla gorilla
+
+gorilla.1 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_167337_Humerus",]
+gorilla.2 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_167339_Humerus",]
+gorilla.3 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_167335_Humerus",]
+gorilla.4 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_201460_Humerus",]
+gorilla.5 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_90289_Humerus",]
+gorilla.6 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_167338_Humerus",]
+gorilla.7 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_90290_Humerus",]
+gorilla.8 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_81652_Humerus",]
+gorilla.9 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_167340_Humerus",]
+gorilla.10 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_54327_Humerus",]
+gorilla.11 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_54356",]
+gorilla.12 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_AMNH_54355",]
+gorilla.13 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_20043_Humerus",]
+gorilla.14 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_26850_Humerus",]
+gorilla.15 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_29048_Humerus",]
+gorilla.16 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_23162_Humerus",]
+gorilla.17 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_38326_Humerus",]
+gorilla.18 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_37264_Humerus",]
+gorilla.19 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_57482_Humerus",]
+gorilla.20 <- humerusdataframe[humerusdataframe[,2] == "Gorilla_MCZ_29049_Humerus",]
+
+
+gorilla.humerusdataframe <- rbind(gorilla.1, gorilla.2, gorilla.3, gorilla.4, gorilla.5, gorilla.6, gorilla.7, gorilla.8, gorilla.9, gorilla.10, gorilla.11, gorilla.12, gorilla.13, gorilla.14, gorilla.15, gorilla.16, gorilla.17, gorilla.18, gorilla.19, gorilla.20)
+
+#Create rows for J and Imin/Imax
+gorilla.humerusdataframe$J <- gorilla.humerusdataframe$Imin + gorilla.humerusdataframe$Imax
+gorilla.humerusdataframe$ratio <- gorilla.humerusdataframe$Imax / gorilla.humerusdataframe$Imin
+
+
+#dataframe must be attached for this function to work
+
+data <- gorilla.humerusdataframe
+attach(data)
+
+
+```
+
+######  Code to pull out CSA at 5% intervals and calculate percent differences. This is repeated verbatim for J and Imax/Imin.
+```{r, message=FALSE}
+midshaft.csa.function <- function(x)
+{
+  slicelength <- as.numeric(length(csa[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (csa[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  csa.levels <- data.frame(rbind(slice.matrix[,2]))
+  csa.levels <- cbind(x, csa.levels)
+  colnames(csa.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((csa.levels[,2:21] - csa.levels[,12])/csa.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.csa = mdply(unique(x), midshaft.csa.function)
+
+
+#Reshape into long format in order to plot 
+result.csa.long <- melt(result.csa, variable.name="level", value.name="percent.difference")
+
+result.csa.long <- rbind(result.csa.long[which(result.csa.long$level == 30),], 
+                         result.csa.long[which(result.csa.long$level == 35),],
+                         result.csa.long[which(result.csa.long$level == 40),],
+                         result.csa.long[which(result.csa.long$level == 45),],
+                         result.csa.long[which(result.csa.long$level == 50),],
+                         result.csa.long[which(result.csa.long$level == 55),],
+                         result.csa.long[which(result.csa.long$level == 60),],
+                         result.csa.long[which(result.csa.long$level == 65),],
+                         result.csa.long[which(result.csa.long$level == 70),])
+
+
+
+#Now the same function, but with the raw data in order to perform the statistical tests (this is just repeating all steps up to, but not including calculating percentages) 
+midshaft.raw.csa.function <- function(x)
+{
+  slicelength <- as.numeric(length(csa[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (csa[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  csa.levels <- data.frame(rbind(slice.matrix[,2]))
+  csa.levels <- cbind(x, csa.levels)
+  colnames(csa.levels) <- c("specimen", seq(0,95, by=5))
+  return(csa.levels)
+}
+
+
+raw.csa.result = mdply(unique(x), midshaft.raw.csa.function)
+raw.result.csa.long <- melt(raw.csa.result, variable.name="level", value.name="raw.value")
+
+
+#inverse of previous result.csa.long to keep specimen names for the anova-- probably need to change for all 
+raw.result.csa.long <- raw.result.csa.long[-c((which(raw.result.csa.long$level == 0)), (which(raw.result.csa.long$level == 5)),(which(raw.result.csa.long$level == 10)), (which(raw.result.csa.long$level == 15)),(which(raw.result.csa.long$level == 20)), (which(raw.result.csa.long$level == 25)),(which(raw.result.csa.long$level == 75)),(which(raw.result.csa.long$level == 80)),(which(raw.result.csa.long$level == 85)),(which(raw.result.csa.long$level == 90)),(which(raw.result.csa.long$level == 95))),]
+
+```
+
+######  Code for Significance testing of the raw, unadjusted CSA values. This is repeated verbatim for J and Imax/Imin.
+```{r}
+#Repeated measures ANOVA####
+#Standard repeated measures anova (correcting for repeated measures from the same specimen)
+m <- aov(terms(raw.result.csa.long$raw.value ~ raw.result.csa.long$level + (raw.result.csa.long$specimen)))
+m <- TukeyHSD(m)
+midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
+csa.aov <- m$`raw.result.csa.long$level`[midshaft.aov,]
+
+
+
+#Paired T-test of all levels against midshaft
+csa.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.csa.result$'50', raw.csa.result$'30', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'35', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'40', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'45', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'55', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'60', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'65', paired=T)$p.value,
+                                                                t.test(raw.csa.result$'50', raw.csa.result$'70', paired=T)$p.value)))
+colnames(csa.ttest) <- c("level", "p-value")
+#Bonferroni Correction to these p-values
+csa.ttest[,2] <- p.adjust(csa.ttest[,2], method = "bonferroni", n = length(csa.ttest[,2]))
+
+#Compare Results of ANOVA and T-test:
+csa.pvalues <- cbind(csa.aov[,-c(1:3)], csa.ttest[,2])
+colnames(csa.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+
+```
+
+####  P-values of Repeated measures Anova and Paired T-tests: CSA
+```{r}
+csa.pvalues
+```
+
+```{r, echo=FALSE,message=FALSE, results='hide'}
+#J Analysis ####
+# Function to pull out J at intervals and compile into dataframe 
+
+
+midshaft.J.function <- function(x)
+{
+  slicelength <- as.numeric(length(J[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (J[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  J.levels <- data.frame(rbind(slice.matrix[,2]))
+  J.levels <- cbind(x, J.levels)
+  colnames(J.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((J.levels[,2:21] - J.levels[,12])/J.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.J = mdply(unique(x), midshaft.J.function)
+
+
+#Reshape into long format in order to plot 
+result.J.long <- melt(result.J, variable.name="level", value.name="percent.difference")
+
+result.J.long <- rbind(result.J.long[which(result.J.long$level == 30),], 
+                       result.J.long[which(result.J.long$level == 35),],
+                       result.J.long[which(result.J.long$level == 40),],
+                       result.J.long[which(result.J.long$level == 45),],
+                       result.J.long[which(result.J.long$level == 50),],
+                       result.J.long[which(result.J.long$level == 55),],
+                       result.J.long[which(result.J.long$level == 60),],
+                       result.J.long[which(result.J.long$level == 65),],
+                       result.J.long[which(result.J.long$level == 70),])
+
+
+
+#Now the same function, but with the raw data in order to perform the statistical tests (this is just repeating all steps up to, but not including calculating percentages) 
+midshaft.raw.J.function <- function(x)
+{
+  slicelength <- as.numeric(length(J[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (J[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  J.levels <- data.frame(rbind(slice.matrix[,2]))
+  J.levels <- cbind(x, J.levels)
+  colnames(J.levels) <- c("specimen", seq(0,95, by=5))
+  return(J.levels)
+}
+
+
+raw.J.result = mdply(unique(x), midshaft.raw.J.function)
+raw.result.J.long <- melt(raw.J.result, variable.name="level", value.name="raw.value")
+
+
+#inverse of previous result.J.long to keep specimen names for the anova-- probably need to change for all 
+raw.result.J.long <- raw.result.J.long[-c((which(raw.result.J.long$level == 0)), (which(raw.result.J.long$level == 5)),(which(raw.result.J.long$level == 10)), (which(raw.result.J.long$level == 15)),(which(raw.result.J.long$level == 20)), (which(raw.result.J.long$level == 25)),(which(raw.result.J.long$level == 75)),(which(raw.result.J.long$level == 80)),(which(raw.result.J.long$level == 85)),(which(raw.result.J.long$level == 90)),(which(raw.result.J.long$level == 95))),]
+
+
+#Repeated measures ANOVA####
+#Standard repeated measures anova (correcting for repeated measures from the same specimen)
+m <- aov(terms(raw.result.J.long$raw.value ~ raw.result.J.long$level + (raw.result.J.long$specimen)))
+m <- TukeyHSD(m)
+midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
+J.aov <- m$`raw.result.J.long$level`[midshaft.aov,]
+
+
+
+#Paired T-test of all levels against midshaft
+J.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.J.result$'50', raw.J.result$'30', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'35', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'40', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'45', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'55', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'60', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'65', paired=T)$p.value,
+                                                              t.test(raw.J.result$'50', raw.J.result$'70', paired=T)$p.value)))
+colnames(J.ttest) <- c("level", "p-value")
+#Bonferroni Correction to these p-values
+J.ttest[,2] <- p.adjust(J.ttest[,2], method = "bonferroni", n = length(J.ttest[,2]))
+
+#Compare Results of ANOVA and T-test:
+J.pvalues <- cbind(J.aov[,-c(1:3)], J.ttest[,2])
+colnames(J.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+J.pvalues
+
+
+#And the same significance tests on the logged values####
+m <- aov(terms(log(raw.result.J.long$raw.value) ~ raw.result.J.long$level + (raw.result.J.long$specimen)))
+m <- TukeyHSD(m)
+midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
+log.J.aov <- m$`raw.result.J.long$level`[midshaft.aov,]
+
+#Paired T-test of all levels against midshaft
+log.J.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(log(log(raw.J.result$'50')), log(raw.J.result$'30'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'35'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'40'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'45'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'55'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'60'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'65'), paired=T)$p.value,
+                                                                  t.test(log(raw.J.result$'50'), log(raw.J.result$'70'), paired=T)$p.value)))
+colnames(log.J.ttest) <- c("level", "p-value")
+#Bonferroni Correction to these p-values
+log.J.ttest[,2] <- p.adjust(J.ttest[,2], method = "bonferroni", n = length(J.ttest[,2]))
+
+
+#Compare Results of logged ANOVA and T-test:
+log.J.pvalues <- cbind(log.J.aov[,-c(1:3)], log.J.ttest[,2])
+colnames(log.J.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+log.J.pvalues
+
+
+###############################################################################################################################################
+
+#Imax/Imin Analysis ####
+# Function to pull out ratio at intervals and compile into dataframe 
+
+midshaft.ratio.function <- function(x)
+{
+  slicelength <- as.numeric(length(ratio[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (ratio[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  ratio.levels <- data.frame(rbind(slice.matrix[,2]))
+  ratio.levels <- cbind(x, ratio.levels)
+  colnames(ratio.levels) <- c("specimen", seq(0,95, by=5))
+  perdiff <- rbind(((ratio.levels[,2:21] - ratio.levels[,12])/ratio.levels[,12])*100)/length(unique(x))
+  perdiff <- data.frame(cbind(x, perdiff))
+  colnames(perdiff) <- c("specimen",seq(0,95, by=5))
+  return(perdiff)
+}
+
+x <- as.vector(data$label)
+
+result.ratio = mdply(unique(x), midshaft.ratio.function)
+
+
+#Reshape into long format in order to plot 
+result.ratio.long <- melt(result.ratio, variable.name="level", value.name="percent.difference")
+
+result.ratio.long <- rbind(result.ratio.long[which(result.ratio.long$level == 30),], 
+                           result.ratio.long[which(result.ratio.long$level == 35),],
+                           result.ratio.long[which(result.ratio.long$level == 40),],
+                           result.ratio.long[which(result.ratio.long$level == 45),],
+                           result.ratio.long[which(result.ratio.long$level == 50),],
+                           result.ratio.long[which(result.ratio.long$level == 55),],
+                           result.ratio.long[which(result.ratio.long$level == 60),],
+                           result.ratio.long[which(result.ratio.long$level == 65),],
+                           result.ratio.long[which(result.ratio.long$level == 70),])
+
+
+
+#Now the same function, but with the raw data in order to perform the statistical tests (this is just repeating all steps up to, but not including calculating percentages) 
+midshaft.raw.ratio.function <- function(x)
+{
+  slicelength <- as.numeric(length(ratio[which(label == x)]))
+  slice.intervals <- as.integer(seq(1,slicelength, by=(slicelength*.05)))
+  slice.intervals <- slice.intervals + min(slice[which(label == x)])
+  slicelength <- slicelength + (min(slice[which(label == x)])-1)
+  slice.bind <- cbind(seq((min(slice[which(label == x)])), slicelength), (ratio[which(label == x)]))
+  slice.bind <- rbind(matrix(nrow = (min(slice[which(label == x)])-1), ncol=2), slice.bind)
+  slice.matrix <- as.matrix(slice.bind[slice.intervals, ])
+  ratio.levels <- data.frame(rbind(slice.matrix[,2]))
+  ratio.levels <- cbind(x, ratio.levels)
+  colnames(ratio.levels) <- c("specimen", seq(0,95, by=5))
+  return(ratio.levels)
+}
+
+
+raw.ratio.result = mdply(unique(x), midshaft.raw.ratio.function)
+raw.result.ratio.long <- melt(raw.ratio.result, variable.name="level", value.name="raw.value")
+
+
+#inverse of previous result.ratio.long to keep specimen names for the anova-- probably need to change for all 
+raw.result.ratio.long <- raw.result.ratio.long[-c((which(raw.result.ratio.long$level == 0)), (which(raw.result.ratio.long$level == 5)),(which(raw.result.ratio.long$level == 10)), (which(raw.result.ratio.long$level == 15)),(which(raw.result.ratio.long$level == 20)), (which(raw.result.ratio.long$level == 25)),(which(raw.result.ratio.long$level == 75)),(which(raw.result.ratio.long$level == 80)),(which(raw.result.ratio.long$level == 85)),(which(raw.result.ratio.long$level == 90)),(which(raw.result.ratio.long$level == 95))),]
+
+
+#Repeated measures ANOVA####
+#Standard repeated measures anova (correcting for repeated measures from the same specimen)
+m <- aov(terms(raw.result.ratio.long$raw.value ~ raw.result.ratio.long$level + (raw.result.ratio.long$specimen)))
+m <- TukeyHSD(m)
+midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
+ratio.aov <- m$`raw.result.ratio.long$level`[midshaft.aov,]
+
+
+
+#Paired T-test of all levels against midshaft
+ratio.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(raw.ratio.result$'50', raw.ratio.result$'30', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'35', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'40', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'45', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'55', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'60', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'65', paired=T)$p.value,
+                                                                  t.test(raw.ratio.result$'50', raw.ratio.result$'70', paired=T)$p.value)))
+colnames(ratio.ttest) <- c("level", "p-value")
+#Bonferroni Correction to these p-values
+ratio.ttest[,2] <- p.adjust(ratio.ttest[,2], method = "bonferroni", n = length(ratio.ttest[,2]))
+
+#Compare Results of ANOVA and T-test:
+ratio.pvalues <- cbind(ratio.aov[,-c(1:3)], ratio.ttest[,2])
+colnames(ratio.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+ratio.pvalues
+
+
+#And the same significance tests on the logged values####
+m <- aov(terms(log(raw.result.ratio.long$raw.value) ~ raw.result.ratio.long$level + (raw.result.ratio.long$specimen)))
+m <- TukeyHSD(m)
+midshaft.aov <- c('50-30','50-35','50-40','50-45', '55-50', '60-50', '65-50','70-50')
+log.ratio.aov <- m$`raw.result.ratio.long$level`[midshaft.aov,]
+
+#Paired T-test of all levels against midshaft
+log.ratio.ttest <-as.data.frame(cbind( c(30,35,40,45,55,60, 65,70), c(t.test(log(log(raw.ratio.result$'50')), log(raw.ratio.result$'30'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'35'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'40'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'45'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'55'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'60'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'65'), paired=T)$p.value,
+                                                                      t.test(log(raw.ratio.result$'50'), log(raw.ratio.result$'70'), paired=T)$p.value)))
+colnames(log.ratio.ttest) <- c("level", "p-value")
+#Bonferroni Correction to these p-values
+log.ratio.ttest[,2] <- p.adjust(ratio.ttest[,2], method = "bonferroni", n = length(ratio.ttest[,2]))
+
+
+#Compare Results of logged ANOVA and T-test:
+log.ratio.pvalues <- cbind(log.ratio.aov[,-c(1:3)], log.ratio.ttest[,2])
+colnames(log.ratio.pvalues) <- c("R.M. ANOVA", "Paired T-Test")
+log.ratio.pvalues
+```
+
+####  P-values of Repeated measures Anova and Paired T-tests: J
+```{r, echo=FALSE}
+J.pvalues
+```
+
+####  P-values of Repeated measures Anova and Paired T-tests: Imax/Imin
+```{r, echo=FALSE}
+ratio.pvalues
+```
+
+*All t-test p-values have been corrected for multiple comparisons (Bonferoni).*
+*Repeated measures ANOVA Tukey's poc hoc p-values were NOT corrected for multiple comparisons (but could be if you would like)*
